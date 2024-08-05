@@ -61,14 +61,14 @@ const adapter = new MemoryStorageAdapter([
 const pooler = new Pooler(adapter);
 
 ;(async () => {
-  let user = await pooler.get<CurrentUser>(Routes.currentUser());
-  console.log("Logged in as", user.displayName);
+  const users = await pooler.getAll<CurrentUser>(Routes.currentUser());
 
-  user = await pooler.get(Routes.currentUser());
-  console.log("Logged in as", user.displayName);
+  for (const user of users) {
+    console.log("Logged in as:", user.displayName);
+  }
 
-  user = await pooler.get(Routes.currentUser());
-  console.log("Logged in as", user.displayName);
+  await pooler.putAll(Routes.logout());
+  console.log("Logged out all users");
 })().catch(console.error);
 
 ```
