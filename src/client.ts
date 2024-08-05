@@ -242,10 +242,11 @@ export class Client {
 				this,
 				body.requiresTwoFactorAuth
 			);
-			if (!code)
+			if (!code) {
 				throw new RefreshError(
 					"Called options.onRequestOtpKey, but returned undefined."
 				);
+			}
 		} else {
 			throw new RefreshError(
 				"One time password required but auth.totpKey is undefined and options.onRequestOtpKey is not set."
