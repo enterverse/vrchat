@@ -2,7 +2,7 @@
   "name": "@enterlink/vrchat",
   "description": "Hand written package for the VRChat API.",
   "author": "nobu-sh <chat@nobu.sh>",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "scripts": {
     "build": "tsup",
@@ -10,6 +10,9 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "require": "./dist/index.js",
@@ -22,6 +25,14 @@
       "types": "./dist/adapters/*/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE",
+    ".gitignore",
+    ".gitattributes"
+  ],
   "packageManager": "yarn@4.4.0",
   "engines": {
     "node": ">=21"
