@@ -181,94 +181,7 @@ export class Client {
 
 		do {
 			try {
-				const loginResponse = await this.requestRaw(Routes.login(), {
-					headers: {
-						Authorization:
-							"Basic " +
-							Buffer.from(
-								`${encodeURIComponent(this.auth.email)}:${encodeURIComponent(this.auth.password)}`
-							).toString("base64"),
-						"Content-Type": "application/json"
-					}
-				});
-
-				const sessionCookie = cookieFromArray(
-					loginResponse.headers.getSetCookie(),
-					"auth"
-				);
-				if (!sessionCookie)
-					throw new RefreshError("Failed to get session cookie after login.");
-
-				this.auth.sessionToken = sessionCookie.value;
-				this.auth.sessionTokenExpiresAt = sessionCookie.expires;
-
-				const body = (await loginResponse.json()) as CurrentUserTotp;
-
-				if (body.requiresTwoFactorAuth?.length) {
-					let code: string | undefined;
-					if (this.auth.totpKey) {
-						code = authenticator.generate(this.auth.totpKey);
-					} else if (this.options.onRequestOtpKey) {
-						code = await this.options.onRequestOtpKey(
-							this,
-							body.requiresTwoFactorAuth
-						);
-						if (!code) {
-							throw new RefreshError(
-								"Called options.onRequestOtpKey, but returned undefined."
-							);
-						}
-					} else {
-						throw new RefreshError(
-							"One time password required but auth.totpKey is undefined and options.onRequestOtpKey is not set."
-						);
-					}
-
-					const verifyResponse = await this.requestRaw(Routes.verify2FACode(), {
-						body: JSON.stringify({ code }),
-						headers: {
-							"Content-Type": "application/json",
-							Cookie: reduceCookiesObject({
-								auth: this.auth.sessionToken
-							})
-						},
-						method: "POST"
-					});
-
-					const totpBody = (await verifyResponse.json()) as Verify2FAResult;
-					if (!totpBody.verified)
-						throw new RefreshError("TOTP key failed to verify.");
-
-					const totpAuthCookie = cookieFromArray(
-						verifyResponse.headers.getSetCookie(),
-						"twoFactorAuth"
-					);
-
-					if (totpAuthCookie) {
-						this.auth.totpSessionToken = totpAuthCookie.value;
-						this.auth.totpSessionTokenExpiresAt = totpAuthCookie.expires;
-					}
-
-					const verifyAuthTokenResponse = await this.requestRaw(
-						Routes.verifyAuthToken(),
-						{
-							headers: {
-								Cookie: reduceCookiesObject({
-									auth: this.auth.sessionToken,
-									twoFactorAuth: this.auth.totpSessionToken
-								})
-							}
-						}
-					);
-
-					const verifyAuthTokenBody =
-						(await verifyAuthTokenResponse.json()) as VerifyAuthTokenResult;
-					if (!verifyAuthTokenBody.ok)
-						throw new RefreshError("Auth token result verification is not ok.");
-				} else if (!body.id) {
-					throw new RefreshError("Failed to get current user after login.");
-				}
-
+				await this.attemptSessionRefresh();
 				await this.options.onSessionRefreshed?.(this);
 				return resolve();
 			} catch (reason) {
@@ -287,5 +200,95 @@ export class Client {
 				);
 			}
 		} while (attempts <= this.options.maxSessionRefreshAttempts);
+	}
+
+	private async attemptSessionRefresh() {
+		const loginResponse = await this.requestRaw(Routes.login(), {
+			headers: {
+				Authorization:
+					"Basic " +
+					Buffer.from(
+						`${encodeURIComponent(this.auth.email)}:${encodeURIComponent(this.auth.password)}`
+					).toString("base64"),
+				"Content-Type": "application/json"
+			}
+		});
+
+		const sessionCookie = cookieFromArray(
+			loginResponse.headers.getSetCookie(),
+			"auth"
+		);
+		if (!sessionCookie)
+			throw new RefreshError("Failed to get session cookie after login.");
+
+		this.auth.sessionToken = sessionCookie.value;
+		this.auth.sessionTokenExpiresAt = sessionCookie.expires;
+
+		const body = (await loginResponse.json()) as CurrentUserTotp;
+
+		if (body.requiresTwoFactorAuth?.length) {
+			await this.handleTwoFactorAuth(body);
+		} else if (!body.id) {
+			throw new RefreshError("Failed to get current user after login.");
+		}
+	}
+
+	private async handleTwoFactorAuth(body: CurrentUserTotp) {
+		let code: string | undefined;
+		if (this.auth.totpKey) {
+			code = authenticator.generate(this.auth.totpKey);
+		} else if (this.options.onRequestOtpKey) {
+			code = await this.options.onRequestOtpKey(
+				this,
+				body.requiresTwoFactorAuth
+			);
+			if (!code)
+				throw new RefreshError(
+					"Called options.onRequestOtpKey, but returned undefined."
+				);
+		} else {
+			throw new RefreshError(
+				"One time password required but auth.totpKey is undefined and options.onRequestOtpKey is not set."
+			);
+		}
+
+		const verifyResponse = await this.requestRaw(Routes.verify2FACode(), {
+			body: JSON.stringify({ code }),
+			headers: {
+				"Content-Type": "application/json",
+				Cookie: reduceCookiesObject({ auth: this.auth.sessionToken })
+			},
+			method: "POST"
+		});
+
+		const totpBody = (await verifyResponse.json()) as Verify2FAResult;
+		if (!totpBody.verified)
+			throw new RefreshError("TOTP key failed to verify.");
+
+		const totpAuthCookie = cookieFromArray(
+			verifyResponse.headers.getSetCookie(),
+			"twoFactorAuth"
+		);
+		if (totpAuthCookie) {
+			this.auth.totpSessionToken = totpAuthCookie.value;
+			this.auth.totpSessionTokenExpiresAt = totpAuthCookie.expires;
+		}
+
+		const verifyAuthTokenResponse = await this.requestRaw(
+			Routes.verifyAuthToken(),
+			{
+				headers: {
+					Cookie: reduceCookiesObject({
+						auth: this.auth.sessionToken,
+						twoFactorAuth: this.auth.totpSessionToken
+					})
+				}
+			}
+		);
+
+		const verifyAuthTokenBody =
+			(await verifyAuthTokenResponse.json()) as VerifyAuthTokenResult;
+		if (!verifyAuthTokenBody.ok)
+			throw new RefreshError("Auth token result verification is not ok.");
 	}
 }
