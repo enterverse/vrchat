@@ -75,7 +75,7 @@ const pooler = new Pooler(adapter);
 ## Backlog
 - [ ] Implement Prisma adapter for our use case.
 - [ ] Implement all API endpoints (see [src/api.ts](./src/api.ts)).
-- [ ] Support for accounts all 2fa types (see [src/client.ts](https://github.com/enterverse/vrchat/blob/4f392fb400c5117a4711bdba808cbacfe14b67ab/src/client.ts#L256)).
+- [ ] Support for accounts all 2fa types (see [src/client.ts](https://github.com/enterverse/vrchat/blob/a79da93e58316c469e9478ab7051070faa1d77e4/src/client.ts#L256)).
 - [ ] Support setting ratelimits.
 - [ ] Way to select an account to use in pooler.
 - [ ] Pooler single account transactions.
