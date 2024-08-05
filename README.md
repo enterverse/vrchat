@@ -7,7 +7,7 @@ Hand written package for the VRChat API applicable to more scenarios.
 yarn add @enterlink/vrchat
 ```
 ## Usage
-> Currently the package will only function with accounts that have a totp enabled.
+> Accounts with no totp key must define a ClientOptions#onRequestOtpKey for fetching the relevant otp.
 
 ```ts
 import { Client, CurrentUser, Routes, World } from "@enterlink/vrchat";
@@ -78,7 +78,7 @@ const pooler = new Pooler(adapter);
 - [x] Prisma adapter optional encryption.
 - [x] Way to select an account to use in pooler.
 - [x] Way to request on all accounts in pooler.
+- [x] Support for accounts all 2fa types (see [src/client.ts](./src/client.ts)).
 - [ ] Implement all API endpoints (see [src/api.ts](./src/api.ts)).
-- [ ] Support for accounts all 2fa types (see [src/client.ts](https://github.com/enterverse/vrchat/blob/a79da93e58316c469e9478ab7051070faa1d77e4/src/client.ts#L256)).
 - [ ] Support setting ratelimits.
 - [ ] Pooler single account transactions.

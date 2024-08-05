@@ -1,7 +1,5 @@
 import { authenticator } from "otplib";
-authenticator.options = {
-	step: 30
-};
+authenticator.options = { step: 30 };
 
 import {
 	cookieFromArray,
@@ -23,6 +21,10 @@ export interface ClientOptions {
 	baseUrl: string;
 	userAgent?: string;
 	onSessionRefreshed?: (client: Client) => Awaitable<void>;
+	onRequestOtpKey?: (
+		client: Client,
+		type: CurrentUserTotp["requiresTwoFactorAuth"]
+	) => Awaitable<string | undefined>;
 }
 
 export type ClientRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -62,19 +64,16 @@ export class Client {
 						"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0"
 				}
 			});
-			if (!response.ok) {
-				throw new RequestError(response);
-			}
+			if (!response.ok) throw new RequestError(response);
 
 			return response;
 		} catch (reason) {
-			if (reason instanceof RequestError) {
-				throw reason;
-			}
-
-			throw new RequestError(undefined, String(reason));
+			throw reason instanceof RequestError
+				? reason
+				: new RequestError(undefined, String(reason));
 		}
 	}
+
 	// Request goes through session management and request retries.
 	public async request(
 		url: string,
@@ -94,7 +93,6 @@ export class Client {
 
 		do {
 			try {
-				// Attempt to make the request return the response if it's ok.
 				return await this.requestRaw(url, {
 					body: init?.body ? JSON.stringify(init.body) : undefined,
 					headers: {
@@ -108,32 +106,20 @@ export class Client {
 					method
 				});
 			} catch (reason) {
-				// If max attempts have been reached then break the loop.
-				if (attempts >= this.options.maxRequestRetryAttempts) {
-					break;
-				}
+				if (attempts >= this.options.maxRequestRetryAttempts) break;
 
-				// Set the last response even if it was an error.
-				if (reason instanceof RequestError) {
-					response = reason.response;
-				}
-
-				// If the reason hints a session refresh is needed we will attempt to refresh the session.
+				if (reason instanceof RequestError) response = reason.response;
 				if (reason instanceof RequestError && reason.hintsRefreshSession()) {
 					await this.refreshSession();
 				}
 
-				// Increment attempts.
 				attempts++;
-
-				// Wait before trying again.
 				await new Promise((resolve) =>
 					setTimeout(resolve, this.options.requestRetryInterval)
 				);
 			}
 		} while (attempts <= this.options.maxRequestRetryAttempts);
 
-		// If we reach this point the we have failed to make the request after the max attempts.
 		throw new RequestError(response, `after ${attempts} attempts`);
 	}
 
@@ -173,14 +159,9 @@ export class Client {
 		);
 	}
 
-	// There are probably more elegant solutions for this. But this is simple and works.
-	// I want to abstract away all the session management from the end user.
+	// Abstract away all the session management from the end user.
 	private async refreshSession() {
-		// Handles scenario where a bunch of requests are made at the same time with an expired session.
-		// One of the requests will actually refresh the session and set a lock so the other ones wait.
-		if (this.refreshLock) {
-			return await this.refreshLock.promise;
-		}
+		if (this.refreshLock) return await this.refreshLock.promise;
 
 		this.refreshLock = promiseLock();
 		const resolve = () => {
@@ -200,7 +181,6 @@ export class Client {
 
 		do {
 			try {
-				// Attempts to get intial login response.
 				const loginResponse = await this.requestRaw(Routes.login(), {
 					headers: {
 						Authorization:
@@ -212,39 +192,38 @@ export class Client {
 					}
 				});
 
-				// Extract the auth session cookie.
 				const sessionCookie = cookieFromArray(
 					loginResponse.headers.getSetCookie(),
 					"auth"
 				);
-				if (!sessionCookie) {
+				if (!sessionCookie)
 					throw new RefreshError("Failed to get session cookie after login.");
-				}
 
-				// Set the sessionToken and sessionTokenExpiresAt.
 				this.auth.sessionToken = sessionCookie.value;
 				this.auth.sessionTokenExpiresAt = sessionCookie.expires;
 
-				// Read the body to see if we need to do further action.
 				const body = (await loginResponse.json()) as CurrentUserTotp;
 
-				// Handle TOTP login if required.
 				if (body.requiresTwoFactorAuth?.length) {
-					// We only support totp for now.
-					// TODO: provide callbacks in the client options for other 2FA methods.
-					if (!body.requiresTwoFactorAuth.includes("totp")) {
+					let code: string | undefined;
+					if (this.auth.totpKey) {
+						code = authenticator.generate(this.auth.totpKey);
+					} else if (this.options.onRequestOtpKey) {
+						code = await this.options.onRequestOtpKey(
+							this,
+							body.requiresTwoFactorAuth
+						);
+						if (!code) {
+							throw new RefreshError(
+								"Called options.onRequestOtpKey, but returned undefined."
+							);
+						}
+					} else {
 						throw new RefreshError(
-							`Two factor method(s): '${body.requiresTwoFactorAuth.join(", ")}' not supported!`
+							"One time password required but auth.totpKey is undefined and options.onRequestOtpKey is not set."
 						);
 					}
 
-					// If we don't have a totp key then we can't proceed
-					if (!this.auth.totpKey) {
-						throw new RefreshError("TOTP key required but not provided.");
-					}
-
-					// Do two factor request
-					const code = authenticator.generate(this.auth.totpKey);
 					const verifyResponse = await this.requestRaw(Routes.verify2FACode(), {
 						body: JSON.stringify({ code }),
 						headers: {
@@ -256,25 +235,20 @@ export class Client {
 						method: "POST"
 					});
 
-					// Verify the totp key
 					const totpBody = (await verifyResponse.json()) as Verify2FAResult;
-					if (!totpBody.verified) {
+					if (!totpBody.verified)
 						throw new RefreshError("TOTP key failed to verify.");
-					}
 
-					// Extract the two factor auth session cookie.
 					const totpAuthCookie = cookieFromArray(
 						verifyResponse.headers.getSetCookie(),
 						"twoFactorAuth"
 					);
 
-					// Set the totpSessionToken and totpSessionTokenExpiresAt.
 					if (totpAuthCookie) {
 						this.auth.totpSessionToken = totpAuthCookie.value;
 						this.auth.totpSessionTokenExpiresAt = totpAuthCookie.expires;
 					}
 
-					// Call verify auth token endpoint to verify our tokens
 					const verifyAuthTokenResponse = await this.requestRaw(
 						Routes.verifyAuthToken(),
 						{
@@ -287,26 +261,19 @@ export class Client {
 						}
 					);
 
-					// Verify our token is okay to use.
 					const verifyAuthTokenBody =
 						(await verifyAuthTokenResponse.json()) as VerifyAuthTokenResult;
-
-					if (!verifyAuthTokenBody.ok) {
+					if (!verifyAuthTokenBody.ok)
 						throw new RefreshError("Auth token result verification is not ok.");
-					}
 				} else if (!body.id) {
 					throw new RefreshError("Failed to get current user after login.");
 				}
 
-				// On Success
 				await this.options.onSessionRefreshed?.(this);
 				return resolve();
 			} catch (reason) {
 				if (attempts >= this.options.maxSessionRefreshAttempts) {
-					if (reason instanceof RefreshError) {
-						return reject(reason);
-					}
-
+					if (reason instanceof RefreshError) return reject(reason);
 					return reject(
 						new RefreshError(
 							`Failed to refresh session after ${attempts} attempts.`
@@ -315,8 +282,6 @@ export class Client {
 				}
 
 				attempts++;
-
-				// Wait before trying again.
 				await new Promise((resolve) =>
 					setTimeout(resolve, this.options.sessionRefreshInterval)
 				);

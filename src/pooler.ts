@@ -28,6 +28,9 @@ export class Pooler {
 	private createClient(account: StorageAdapterAccount) {
 		return new Client(account, {
 			...this.options,
+			onRequestOtpKey: async (client, type) => {
+				return this.options?.onRequestOtpKey?.(client, type);
+			},
 			onSessionRefreshed: async (client) => {
 				await this.adapter.update(client.auth.email, client.auth);
 				await this.options?.onSessionRefreshed?.(client);
