@@ -32,5 +32,9 @@
     "eslint": "9",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "otplib": "^12.0.1",
+    "vrchat": "^1.18.1"
   }
 }
