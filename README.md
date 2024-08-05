@@ -7,7 +7,7 @@ Hand written package for the VRChat API applicable to more scenarios.
 yarn add @enterlink/vrchat
 ```
 ## Usage
-Currently the package will only function with accounts that have a totp enabled.
+> Currently the package will only function with accounts that have a totp enabled.
 
 ```ts
 import { Client, Routes } from "@enterlink/vrchat";
@@ -32,11 +32,7 @@ const client = new Client({
 ```
 
 ### Pooled Usage Example
-Our specfic scenario demands us having a pool of accounts. You can achieve this  with using the pooler. 
-
-The pooler expects a constructed implementation of `StorageAdapter`.
-
-In this example we will use the [Memory Adapter](./src/adapters/memory).
+Our specfic scenario demands us having a pool of accounts. You can achieve this  with using the pooler. The pooler expects a constructed implementation of `StorageAdapter`. In this example we will use the [Memory Adapter](./src/adapters/memory).
 
 > It is highly recommended to use an adapter that will persist session states across restarts. VRChat has a limit to how many active sessions an account can have.
 
