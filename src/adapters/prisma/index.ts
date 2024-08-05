@@ -20,24 +20,24 @@ export class PrismaStorageAdapter implements StorageAdapter {
 	}
 
 	public encrypt(value: string): string {
-		if (!this.options?.encryptionKey) {
-			throw new Error("Encryption key is not set.");
-		}
-
 		if (!this.isUsingEncryption) {
 			return value;
+		}
+
+		if (!this.options?.encryptionKey) {
+			throw new Error("Encryption key is not set.");
 		}
 
 		return encryptString(value, this.options.encryptionKey);
 	}
 
 	public decrypt(value: string): string {
-		if (!this.options?.encryptionKey) {
-			throw new Error("Encryption key is not set.");
-		}
-
 		if (!this.isUsingEncryption) {
 			return value;
+		}
+
+		if (!this.options?.encryptionKey) {
+			throw new Error("Encryption key is not set.");
 		}
 
 		return decryptString(value, this.options.encryptionKey);
