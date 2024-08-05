@@ -10,7 +10,7 @@ yarn add @enterlink/vrchat
 > Currently the package will only function with accounts that have a totp enabled.
 
 ```ts
-import { Client, Routes } from "@enterlink/vrchat";
+import { Client, CurrentUser, Routes, World } from "@enterlink/vrchat";
 
 const client = new Client({
   email: 'email@example.com',
@@ -19,10 +19,10 @@ const client = new Client({
 });
 
 ;(async () => {
-  const user = await client.get(Routes.currentUser());
+  const user = await client.get<CurrentUser>(Routes.currentUser());
   console.log("Logged in as", user.displayName);
 
-  const world = await client.get(Routes.world("wrld_2851d12c-57d0-4754-84cf-aa494ce7a03a"));
+  const world = await client.get<World>(Routes.world("wrld_2851d12c-57d0-4754-84cf-aa494ce7a03a"));
   console.log("Found World:", world.name);
 
   await client.put(Routes.logout());
@@ -37,7 +37,7 @@ Our specfic scenario demands us having a pool of accounts. You can achieve this 
 > It is highly recommended to use an adapter that will persist session states across restarts. VRChat has a limit to how many active sessions an account can have.
 
 ```ts
-import { Pooler, Routes } from "@enterlink/vrchat";
+import { CurrentUser, Pooler, Routes } from "@enterlink/vrchat";
 import { MemoryStorageAdapter } from '@enterlink/vrchat/adapter/memory';
 
 const adapter = new MemoryStorageAdapter([
@@ -61,7 +61,7 @@ const adapter = new MemoryStorageAdapter([
 const pooler = new Pooler(adapter);
 
 ;(async () => {
-  let user = await pooler.get(Routes.currentUser());
+  let user = await pooler.get<CurrentUser>(Routes.currentUser());
   console.log("Logged in as", user.displayName);
 
   user = await pooler.get(Routes.currentUser());
@@ -69,7 +69,8 @@ const pooler = new Pooler(adapter);
 
   user = await pooler.get(Routes.currentUser());
   console.log("Logged in as", user.displayName);
-})().catch(console.error)
+})().catch(console.error);
+
 ```
 
 ## Backlog
