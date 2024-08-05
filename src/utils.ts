@@ -1,3 +1,10 @@
+import {
+	createCipheriv,
+	createDecipheriv,
+	createHash,
+	randomBytes
+} from "crypto";
+
 export const reduceQueryObject = <T extends object>(query?: T) => {
 	if (!query) {
 		return "";
@@ -89,4 +96,43 @@ export function cookieFromArray(
 	const expires = new Date(Date.now() + Number(maxAge) * 1000 - 5000);
 
 	return { expires, value };
+}
+
+// Helper function to hash the secret key using SHA-256
+function hashKey(secret: string): Buffer {
+	return createHash("sha256").update(secret).digest();
+}
+
+// Function to encrypt a string using AES-256-CBC
+export function encryptString(value: string, secret: string): string {
+	try {
+		const iv = randomBytes(16); // AES block size is 16 bytes
+		const key = hashKey(secret); // Ensure the key is 32 bytes long
+		const cipher = createCipheriv("aes-256-cbc", key, iv);
+		let encrypted = cipher.update(value, "utf8", "hex");
+		encrypted += cipher.final("hex");
+		return `${iv.toString("hex")}:${encrypted}`;
+	} catch {
+		throw new Error("Encryption process failed!");
+	}
+}
+
+// Function to decrypt a previously encrypted string
+export function decryptString(value: string, secret: string): string {
+	try {
+		const parts = value.split(":");
+		if (parts.length !== 2) {
+			throw new Error("Invalid encrypted string");
+		}
+
+		const iv = Buffer.from(parts[0]!, "hex");
+		const encryptedText = parts[1];
+		const key = hashKey(secret);
+		const decipher = createDecipheriv("aes-256-cbc", key, iv);
+		let decrypted = decipher.update(encryptedText!, "hex", "utf8");
+		decrypted += decipher.final("utf8");
+		return decrypted;
+	} catch {
+		throw new Error("Decryption process failed!");
+	}
 }

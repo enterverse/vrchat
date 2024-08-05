@@ -1,11 +1,50 @@
+import { decryptString, encryptString } from "../../utils";
+
 import type { PrismaClient } from "@prisma/client";
 import type { StorageAdapter, StorageAdapterAccount } from "../../adapter";
+
+export interface PrismaStorageAdapterOptions {
+	encryptionKey?: string;
+}
 
 export class PrismaStorageAdapter implements StorageAdapter {
 	public static id = "prisma-adapter";
 
-	public constructor(private prisma: PrismaClient) {}
+	public constructor(
+		private prisma: PrismaClient,
+		private options?: PrismaStorageAdapterOptions
+	) {}
 
+	public get isUsingEncryption(): boolean {
+		return !!this.options?.encryptionKey;
+	}
+
+	public encrypt(value: string): string {
+		if (!this.options?.encryptionKey) {
+			throw new Error("Encryption key is not set.");
+		}
+
+		if (!this.isUsingEncryption) {
+			return value;
+		}
+
+		return encryptString(value, this.options.encryptionKey);
+	}
+
+	public decrypt(value: string): string {
+		if (!this.options?.encryptionKey) {
+			throw new Error("Encryption key is not set.");
+		}
+
+		if (!this.isUsingEncryption) {
+			return value;
+		}
+
+		return decryptString(value, this.options.encryptionKey);
+	}
+
+	// This will not return decrypted values. It currently isn't used in that way.
+	// So to save on performance, we won't decrypt the values here.
 	public getAll(): Promise<Array<StorageAdapterAccount>> {
 		return this.prisma.vRChatAccounts.findMany();
 	}
@@ -21,7 +60,11 @@ export class PrismaStorageAdapter implements StorageAdapter {
 			throw new Error("No accounts found.");
 		}
 
-		return account;
+		return {
+			...account,
+			password: this.decrypt(account.password),
+			totpKey: account.totpKey && this.decrypt(account.totpKey)
+		};
 	}
 
 	public async get(email: string): Promise<StorageAdapterAccount> {
@@ -33,12 +76,20 @@ export class PrismaStorageAdapter implements StorageAdapter {
 			throw new Error(`Account with email "${email}" not found.`);
 		}
 
-		return account;
+		return {
+			...account,
+			password: this.decrypt(account.password),
+			totpKey: account.totpKey && this.decrypt(account.totpKey)
+		};
 	}
 
 	public set(account: StorageAdapterAccount): Promise<void> {
 		return this.prisma.vRChatAccounts.create({
-			data: account
+			data: {
+				...account,
+				password: this.encrypt(account.password),
+				totpKey: account.totpKey && this.encrypt(account.totpKey)
+			}
 		});
 	}
 
@@ -47,7 +98,11 @@ export class PrismaStorageAdapter implements StorageAdapter {
 		account: Partial<StorageAdapterAccount>
 	): Promise<void> {
 		return this.prisma.vRChatAccounts.update({
-			data: account,
+			data: {
+				...account,
+				password: account.password && this.encrypt(account.password),
+				totpKey: account.totpKey && this.encrypt(account.totpKey)
+			},
 			where: { email }
 		});
 	}
