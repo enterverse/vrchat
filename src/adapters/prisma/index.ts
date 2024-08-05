@@ -43,10 +43,15 @@ export class PrismaStorageAdapter implements StorageAdapter {
 		return decryptString(value, this.options.encryptionKey);
 	}
 
-	// This will not return decrypted values. It currently isn't used in that way.
-	// So to save on performance, we won't decrypt the values here.
-	public getAll(): Promise<Array<StorageAdapterAccount>> {
-		return this.prisma.vRChatAccounts.findMany();
+	public async getAll(): Promise<Array<StorageAdapterAccount>> {
+		const accounts =
+			(await this.prisma.vRChatAccounts.findMany()) as Array<StorageAdapterAccount>;
+
+		return accounts.map((account) => ({
+			...account,
+			password: this.decrypt(account.password),
+			totpKey: account.totpKey && this.decrypt(account.totpKey)
+		}));
 	}
 
 	public async getRandom(): Promise<StorageAdapterAccount> {
@@ -60,11 +65,7 @@ export class PrismaStorageAdapter implements StorageAdapter {
 			throw new Error("No accounts found.");
 		}
 
-		return {
-			...account,
-			password: this.decrypt(account.password),
-			totpKey: account.totpKey && this.decrypt(account.totpKey)
-		};
+		return account;
 	}
 
 	public async get(email: string): Promise<StorageAdapterAccount> {
