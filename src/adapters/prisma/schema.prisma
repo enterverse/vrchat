@@ -1,0 +1,14 @@
+model VRChatAccounts {
+  email    String  @id
+  password String
+  totpKey  String?
+
+  sessionToken          String?
+  sessionTokenExpiresAt DateTime?
+
+  totpSessionToken          String?
+  totpSessionTokenExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -66,12 +66,15 @@ __metadata:
   resolution: "@enterlink/vrchat@workspace:."
   dependencies:
     "@ariesclark/eslint-config": "npm:^2.0.1"
+    "@prisma/client": "npm:^5.17.0"
     "@types/node": "npm:^22.1.0"
     eslint: "npm:9"
     otplib: "npm:^12.0.1"
     tsup: "npm:^8.2.4"
     typescript: "npm:^5.5.4"
     vrchat: "npm:^1.18.1"
+  peerDependencies:
+    "@prisma/client": "*"
   languageName: unknown
   linkType: soft
 
@@ -490,6 +493,18 @@ __metadata:
   version: 0.1.1
   resolution: "@pkgr/core@npm:0.1.1"
   checksum: 10c0/3f7536bc7f57320ab2cf96f8973664bef624710c403357429fbf680a5c3b4843c1dbd389bb43daa6b1f6f1f007bb082f5abcb76bb2b5dc9f421647743b71d3d8
+  languageName: node
+  linkType: hard
+
+"@prisma/client@npm:^5.17.0":
+  version: 5.17.0
+  resolution: "@prisma/client@npm:5.17.0"
+  peerDependencies:
+    prisma: "*"
+  peerDependenciesMeta:
+    prisma:
+      optional: true
+  checksum: 10c0/cc6c5e9bfbc2f9a01fdf73e009c42298b8a9fea8c9b19db0089cad84a9ee94c3bb6f66f53f1e2f4b32b3506706bf16d23a8e3bcb4619a8bc76d0812a8382ae63
   languageName: node
   linkType: hard
 

@@ -2,7 +2,7 @@
   "name": "@enterlink/vrchat",
   "description": "Hand written package for the VRChat API.",
   "author": "nobu-sh <chat@nobu.sh>",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "license": "MIT",
   "repository": "https://github.com/enterverse/vrchat",
   "scripts": {
@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@ariesclark/eslint-config": "^2.0.1",
+    "@prisma/client": "^5.17.0",
     "@types/node": "^22.1.0",
     "eslint": "9",
     "tsup": "^8.2.4",
@@ -48,5 +49,8 @@
   "dependencies": {
     "otplib": "^12.0.1",
     "vrchat": "^1.18.1"
+  },
+  "peerDependencies": {
+    "@prisma/client": "*"
   }
 }
