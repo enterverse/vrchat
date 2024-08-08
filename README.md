@@ -1,5 +1,5 @@
 # vrchat
-Hand written package for the VRChat API applicable to more scenarios.
+VRChat API package focused on abstracting session management.
 
 ## Installation
 
