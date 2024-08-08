@@ -73,6 +73,9 @@ const pooler = new Pooler(adapter);
 
 ```
 
+## Notes
+We use `otplib` internally for generating TOTP codes. I've noticed that on Node.js versions 20 and 21, authentication failures occur because one of `otplib`'s dependencies, `thirty-two`, uses `new Buffer()` internally. This results in a Node.js error: `TypeError: Cannot read properties of undefined (reading '0')`. Since there isn't a straightforward fix for this issue, we are running Node.js v22+ to avoid the problem.
+
 ## Backlog
 - [x] Implement Prisma adapter for our use case.
 - [x] Prisma adapter optional encryption.

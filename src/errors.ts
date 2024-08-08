@@ -1,6 +1,9 @@
 export class RefreshError extends Error {
 	public name = "RefreshError";
-	public constructor(public readonly message: string) {
+	public constructor(
+		public readonly message: string,
+		public readonly originated?: Error
+	) {
 		super(message);
 	}
 }

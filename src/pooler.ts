@@ -13,7 +13,7 @@ export type PoolerOptions = ClientOptions;
 export class Pooler {
 	public constructor(
 		public adapter: StorageAdapter,
-		public options?: PoolerOptions
+		public options?: Partial<PoolerOptions>
 	) {
 		this.options = {
 			baseUrl: "https://vrchat.com/api/1",

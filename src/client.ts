@@ -189,7 +189,8 @@ export class Client {
 					if (reason instanceof RefreshError) return reject(reason);
 					return reject(
 						new RefreshError(
-							`Failed to refresh session after ${attempts} attempts.`
+							`Failed to refresh session after ${attempts} attempts.`,
+							reason instanceof Error ? reason : new Error(String(reason))
 						)
 					);
 				}
