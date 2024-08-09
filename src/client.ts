@@ -159,6 +159,10 @@ export class Client {
 		);
 	}
 
+	public async forceSessionRefresh(): Promise<void> {
+		return this.refreshSession();
+	}
+
 	// Abstract away all the session management from the end user.
 	private async refreshSession() {
 		if (this.refreshLock) return await this.refreshLock.promise;
@@ -178,6 +182,16 @@ export class Client {
 		};
 
 		let attempts = 0;
+
+		// Attempt a logout first with rawRequest so it doesnt go through session management.
+		// Or retry if it fails.
+		if (this.auth.sessionToken) {
+			try {
+				await this.requestRaw(Routes.logout(), { method: "PUT" });
+			} catch {
+				// noop
+			}
+		}
 
 		do {
 			try {

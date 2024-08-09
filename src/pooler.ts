@@ -188,4 +188,14 @@ export class Pooler {
 	): Promise<Array<T>> {
 		return this.handleRequestAll("DELETE", url, { headers });
 	}
+
+	public async forceSessionRefresh(
+		emailOrAccount: string | StorageAdapterAccount
+	) {
+		const account =
+			typeof emailOrAccount === "string"
+				? await this.adapter.get(emailOrAccount)
+				: emailOrAccount;
+		return this.createClient(account).forceSessionRefresh();
+	}
 }
