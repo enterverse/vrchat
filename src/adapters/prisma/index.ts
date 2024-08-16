@@ -98,9 +98,19 @@ export class PrismaStorageAdapter implements StorageAdapter {
 		email: string,
 		account: Partial<StorageAdapterAccount>
 	): Promise<void> {
+		// Remove the updatedAt and createdAt fields
+		const {
+			updatedAt: _u,
+			createdAt: _c,
+			...accountData
+		} = account as Partial<StorageAdapterAccount> & {
+			updatedAt?: Date;
+			createdAt?: Date;
+		};
+
 		return this.prisma.vRChatAccounts.update({
 			data: {
-				...account,
+				...accountData,
 				password: account.password && this.encrypt(account.password),
 				totpKey: account.totpKey && this.encrypt(account.totpKey)
 			},
