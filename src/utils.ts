@@ -35,7 +35,11 @@ export const atLeastOneOf = <T extends object>(
 
 export const reduceCookiesObject = <T extends object>(cookies: T) => {
 	return Object.keys(cookies)
-		.filter((key) => cookies[key as keyof T] !== undefined)
+		.filter(
+			(key) =>
+				cookies[key as keyof T] !== undefined &&
+				cookies[key as keyof T] !== null
+		)
 		.map((key) => `${key}=${cookies[key as keyof T]}`)
 		.join("; ");
 };
