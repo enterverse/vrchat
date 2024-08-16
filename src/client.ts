@@ -25,6 +25,11 @@ export interface ClientOptions {
 		client: Client,
 		type: CurrentUserTotp["requiresTwoFactorAuth"]
 	) => Awaitable<string | undefined>;
+	debugRequest?: (
+		client: Client,
+		url: string,
+		init?: RequestInit
+	) => Awaitable<void>;
 }
 
 export type ClientRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
@@ -43,7 +48,7 @@ export class Client {
 		options?: Partial<ClientOptions>
 	) {
 		this.options = {
-			baseUrl: "https://vrchat.com/api/1",
+			baseUrl: "https://api.vrchat.cloud/api/1",
 			maxRequestRetryAttempts: 5,
 			maxSessionRefreshAttempts: 3,
 			requestRetryInterval: 100,
@@ -55,6 +60,10 @@ export class Client {
 	// Raw request doesn't go through session management and request retries.
 	public async requestRaw(url: string, init?: RequestInit): Promise<Response> {
 		try {
+			if (this.options.debugRequest) {
+				await this.options.debugRequest(this, this.options.baseUrl + url, init);
+			}
+
 			const response = await fetch(this.options.baseUrl + url, {
 				...init,
 				headers: {

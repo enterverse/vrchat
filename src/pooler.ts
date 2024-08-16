@@ -28,6 +28,11 @@ export class Pooler {
 	private createClient(account: StorageAdapterAccount) {
 		return new Client(account, {
 			...this.options,
+			debugRequest: async (client, url, init) => {
+				if (this.options?.debugRequest) {
+					await this.options.debugRequest(client, url, init);
+				}
+			},
 			onRequestOtpKey: async (client, type) => {
 				return this.options?.onRequestOtpKey?.(client, type);
 			},
