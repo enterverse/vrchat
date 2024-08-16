@@ -27,8 +27,8 @@ export interface ClientOptions {
 	) => Awaitable<string | undefined>;
 	debugRequest?: (
 		client: Client,
-		url: string,
-		init?: RequestInit
+		req: { url: string; init?: RequestInit },
+		res: Response
 	) => Awaitable<void>;
 }
 
@@ -60,10 +60,6 @@ export class Client {
 	// Raw request doesn't go through session management and request retries.
 	public async requestRaw(url: string, init?: RequestInit): Promise<Response> {
 		try {
-			if (this.options.debugRequest) {
-				await this.options.debugRequest(this, this.options.baseUrl + url, init);
-			}
-
 			const response = await fetch(this.options.baseUrl + url, {
 				...init,
 				headers: {
@@ -73,6 +69,18 @@ export class Client {
 						"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
 				}
 			});
+
+			if (this.options.debugRequest) {
+				await this.options.debugRequest(
+					this,
+					{
+						init,
+						url
+					},
+					response
+				);
+			}
+
 			if (!response.ok) throw new RequestError(response);
 
 			return response;

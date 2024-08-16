@@ -28,9 +28,9 @@ export class Pooler {
 	private createClient(account: StorageAdapterAccount) {
 		return new Client(account, {
 			...this.options,
-			debugRequest: async (client, url, init) => {
+			debugRequest: async (client, req, res) => {
 				if (this.options?.debugRequest) {
-					await this.options.debugRequest(client, url, init);
+					await this.options.debugRequest(client, req, res);
 				}
 			},
 			onRequestOtpKey: async (client, type) => {
