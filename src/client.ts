@@ -61,7 +61,7 @@ export class Client {
 					...(init?.headers || {}),
 					"User-Agent":
 						this.options.userAgent ||
-						"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0"
+						"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
 				}
 			});
 			if (!response.ok) throw new RequestError(response);
