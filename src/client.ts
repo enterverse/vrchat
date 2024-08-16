@@ -204,7 +204,16 @@ export class Client {
 		// Or retry if it fails.
 		if (this.auth.sessionToken) {
 			try {
-				await this.requestRaw(Routes.logout(), { method: "PUT" });
+				await this.requestRaw(Routes.logout(), {
+					headers: {
+						"Content-Type": "application/json",
+						Cookie: reduceCookiesObject({
+							auth: this.auth.sessionToken,
+							twoFactorAuth: this.auth.totpSessionToken
+						})
+					},
+					method: "PUT"
+				});
 			} catch {
 				// noop
 			}
