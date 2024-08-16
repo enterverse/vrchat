@@ -2,7 +2,7 @@
   "name": "@enterlink/vrchat",
   "description": "Hand written package for the VRChat API.",
   "author": "nobu-sh <chat@nobu.sh>",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "license": "MIT",
   "repository": "https://github.com/enterverse/vrchat",
   "scripts": {

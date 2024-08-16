@@ -16,7 +16,7 @@ export class Pooler {
 		public options?: Partial<PoolerOptions>
 	) {
 		this.options = {
-			baseUrl: "https://vrchat.com/api/1",
+			baseUrl: "https://api.vrchat.cloud/api/1",
 			maxRequestRetryAttempts: 5,
 			maxSessionRefreshAttempts: 3,
 			requestRetryInterval: 100,
