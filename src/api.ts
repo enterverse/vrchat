@@ -166,7 +166,7 @@ export const Routes = {
 	 * *Requires the session cookie to be present in the request.*
 	 */
 	downloadFile: (fileId: string, versionId: number) =>
-		`/files/${fileId}/${versionId}` as const,
+		`/file/${fileId}/${versionId}` as const,
 
 	/**
 	 * Route for:
@@ -176,7 +176,7 @@ export const Routes = {
 	 *
 	 * *Requires the session cookie to be present in the request.*
 	 */
-	file: (fileId: string) => `/files/${fileId}` as const,
+	file: (fileId: string) => `/file/${fileId}` as const,
 
 	/**
 	 * Route for:
