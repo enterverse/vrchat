@@ -128,6 +128,9 @@ export class Client {
 				if (reason instanceof RequestError) response = reason.response;
 				if (reason instanceof RequestError && reason.hintsRefreshSession()) {
 					await this.refreshSession();
+					// We don't want to retry on these status codes. They indicate user error not server error.
+				} else if (reason instanceof RequestError && reason.hintsNoRetry()) {
+					break;
 				}
 
 				attempts++;

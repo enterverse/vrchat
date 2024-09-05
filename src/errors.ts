@@ -22,4 +22,11 @@ export class RequestError extends Error {
 	public hintsRefreshSession() {
 		return this.response?.status === 401;
 	}
+
+	public hintsNoRetry() {
+		const noRetryStatuses = [400, 403, 404, 405, 409, 422];
+		return this.response
+			? noRetryStatuses.includes(this.response.status)
+			: false;
+	}
 }
